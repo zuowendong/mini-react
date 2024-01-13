@@ -8,5 +8,12 @@
   <body>
     <div id="root"></div>
     <script type="module" src="./main.js"></script>
+
+    <script>
+      const dom = document.createElement("div");
+      dom.id = "app";
+      dom.textContent = "hi mini-react";
+      document.querySelector("#root").append(dom);
+    </script>
   </body>
 </html>
