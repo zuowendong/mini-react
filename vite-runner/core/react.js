@@ -27,27 +27,13 @@ function render(el, container) {
       children: [el],
     },
   };
-  // const dom =
-  //   el.type === "TEXT_ELEMENT"
-  //     ? document.createTextNode("")
-  //     : document.createElement(el.type);
-  // Object.keys(el.props).forEach((key) => {
-  //   if (key !== "children") {
-  //     dom[key] = el.props[key];
-  //   }
-  // });
-  // const children = el.props.children;
-  // children.forEach((child) => {
-  //   render(child, dom);
-  // });
-  // container.append(dom);
 }
 
 let nextWorkOfUnit = null;
 function workLoop(IdleDeadline) {
   let shouldYield = false;
   while (!shouldYield && nextWorkOfUnit) {
-    nextWorkOfUnit = preformWorkOfUnit(nextWorkOfUnit);
+    nextWorkOfUnit = performWorkOfUnit(nextWorkOfUnit);
 
     shouldYield = IdleDeadline.timeRemaining() < 1;
   }
@@ -55,55 +41,62 @@ function workLoop(IdleDeadline) {
   requestIdleCallback(workLoop);
 }
 
-requestIdleCallback(workLoop);
+function createDom(type) {
+  return type === "TEXT_ELEMENT"
+    ? document.createTextNode("")
+    : document.createElement(type);
+}
 
-function preformWorkOfUnit(work) {
-  // 1. 创建dom
-  if (!work.dom) {
-    const dom = (work.dom =
-      work.type === "TEXT_ELEMENT"
-        ? document.createTextNode("")
-        : document.createElement(work.type));
+function updateProps(dom, props) {
+  Object.keys(props).forEach((key) => {
+    if (key !== "children") {
+      dom[key] = props[key];
+    }
+  });
+}
 
-    work.parent.dom.append(dom);
-
-    // 2. 处理props
-    Object.keys(work.props).forEach((key) => {
-      if (key !== "children") {
-        dom[key] = work.props[key];
-      }
-    });
-  }
-  // 3. 转化链表，确定指针
-  const children = work.props.children;
+function initChildren(fiber) {
+  const children = fiber.props.children;
   let prevChild = null;
   children.forEach((child, index) => {
-    const newWork = {
+    const newFiber = {
       type: child.type,
       props: child.props,
       child: null,
-      parent: work,
+      parent: fiber,
       sibling: null,
       dom: null,
     };
 
     if (index === 0) {
-      work.child = newWork;
+      fiber.child = newFiber;
     } else {
-      prevChild.sibling = newWork;
+      prevChild.sibling = newFiber;
     }
-    prevChild = newWork;
-  });
 
-  // 4. 返回下一个
-  if (work.child) {
-    return work.child;
-  }
-  if (work.sibling) {
-    return work.sibling;
-  }
-  return work.parent?.sibling;
+    prevChild = newFiber;
+  });
 }
+
+function performWorkOfUnit(fiber) {
+  if (!fiber.dom) {
+    const dom = (fiber.dom = createDom(fiber.type));
+    fiber.parent.dom.append(dom);
+    updateProps(dom, fiber.props);
+  }
+
+  initChildren(fiber);
+
+  if (fiber.child) {
+    return fiber.child;
+  }
+  if (fiber.sibling) {
+    return fiber.sibling;
+  }
+  return fiber.parent?.sibling;
+}
+
+requestIdleCallback(workLoop);
 
 export default {
   render,
