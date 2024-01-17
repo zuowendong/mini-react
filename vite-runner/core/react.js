@@ -34,6 +34,7 @@ function render(el, container) {
 
 let root = null;
 let nextWorkOfUnit = null;
+
 function workLoop(IdleDeadline) {
   let shouldYield = false;
   while (!shouldYield && nextWorkOfUnit) {
@@ -57,7 +58,6 @@ function commitWork(fiber) {
   if (!fiber) return;
 
   let fiberParent = fiber.parent;
-
   while (!fiberParent.dom) {
     fiberParent = fiberParent.parent;
   }
@@ -89,7 +89,6 @@ function updateProps(dom, props) {
 }
 
 function initChildren(fiber, children) {
-  console.log(fiber);
   let prevChild = null;
   children.forEach((child, index) => {
     const newFiber = {
@@ -145,10 +144,8 @@ function performWorkOfUnit(fiber) {
   let nextFiber = fiber;
   while (nextFiber) {
     if (nextFiber.sibling) return nextFiber.sibling;
-
     nextFiber = nextFiber.parent;
   }
-
   return fiber.parent?.sibling;
 }
 
