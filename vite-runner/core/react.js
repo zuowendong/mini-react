@@ -78,12 +78,18 @@ function createDom(type) {
 function updateProps(dom, props) {
   Object.keys(props).forEach((key) => {
     if (key !== "children") {
-      dom[key] = props[key];
+      if (key.startsWith("on")) {
+        const event = key.slice(2).toLowerCase();
+        dom.addEventListener(event, props[key]);
+      } else {
+        dom[key] = props[key];
+      }
     }
   });
 }
 
 function initChildren(fiber, children) {
+  console.log(fiber);
   let prevChild = null;
   children.forEach((child, index) => {
     const newFiber = {
@@ -137,7 +143,6 @@ function performWorkOfUnit(fiber) {
   }
 
   let nextFiber = fiber;
-
   while (nextFiber) {
     if (nextFiber.sibling) return nextFiber.sibling;
 
