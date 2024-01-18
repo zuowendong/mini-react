@@ -35,6 +35,7 @@ function render(el, container) {
 let wipRoot = null;
 let currentRoot = null;
 let nextWorkOfUnit = null;
+let deletions = [];
 
 function workLoop(IdleDeadline) {
   let shouldYield = false;
@@ -51,9 +52,23 @@ function workLoop(IdleDeadline) {
 }
 
 function commitRoot() {
+  deletions.forEach(commitDeletion);
   commitWork(wipRoot.child);
   currentRoot = wipRoot;
   wipRoot = null;
+  deletions = [];
+}
+
+function commitDeletion(fiber) {
+  if (fiber.dom) {
+    let fiberParent = fiber.parent;
+    while (!fiberParent.dom) {
+      fiberParent = fiberParent.parent;
+    }
+    fiberParent.dom.removeChild(fiber.dom);
+  } else {
+    commitDeletion(fiber.child);
+  }
 }
 
 function commitWork(fiber) {
@@ -82,17 +97,6 @@ function createDom(type) {
 }
 
 function updateProps(dom, nextProps, prevProps) {
-  // Object.keys(props).forEach((key) => {
-  //   if (key !== "children") {
-  //     if (key.startsWith("on")) {
-  //       const event = key.slice(2).toLowerCase();
-  //       dom.addEventListener(event, props[key]);
-  //     } else {
-  //       dom[key] = props[key];
-  //     }
-  //   }
-  // });
-  // 1, old 有 new 无 -> 删除
   Object.keys(prevProps).forEach((key) => {
     if (key !== "children") {
       if (!(key in nextProps)) {
@@ -100,9 +104,6 @@ function updateProps(dom, nextProps, prevProps) {
       }
     }
   });
-
-  // 2. old 无 new 有
-  // 3. old 有 new 有
 
   Object.keys(nextProps).forEach((key) => {
     if (key !== "children") {
@@ -126,7 +127,6 @@ function reconcileChildren(fiber, children) {
     const isSameType = oldFiber && oldFiber.type === child.type;
 
     let newFiber;
-    // update
     if (isSameType) {
       newFiber = {
         type: child.type,
@@ -148,6 +148,11 @@ function reconcileChildren(fiber, children) {
         dom: null,
         effectTag: "placement",
       };
+
+      if (oldFiber) {
+        console.log("should delete", oldFiber);
+        deletions.push(oldFiber);
+      }
     }
 
     if (oldFiber) {

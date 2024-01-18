@@ -1,18 +1,24 @@
 import React from "./core/react.js";
 
-// const App = React.createElement("div", { id: "app" }, "App");
-
-let countNum = 10;
+let hasChange = false;
 function Counter() {
-  function handleClick() {
-    console.log("click");
-    countNum++;
+  // const Foo = <div>foo</div>;
+
+  function Foo() {
+    return <div>foo</div>;
+  }
+
+  const Bar = <p>bar</p>;
+
+  function handleChange() {
+    hasChange = !hasChange;
     React.update();
   }
+
   return (
     <div>
-      count: {countNum}
-      <button onClick={handleClick}>按钮</button>
+      <div> count: {hasChange ? Bar : <Foo></Foo>}</div>
+      <button onClick={handleChange}>按钮</button>
     </div>
   );
 }
