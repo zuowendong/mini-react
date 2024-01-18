@@ -14,7 +14,6 @@ function createElement(type, props, ...children) {
     props: {
       ...props,
       children: children.map((child) => {
-        console.log(child);
         const isTextNode =
           typeof child === "string" || typeof child === "number";
         return isTextNode ? createTextNode(child) : child;
@@ -37,11 +36,18 @@ let wipRoot = null;
 let currentRoot = null;
 let nextWorkOfUnit = null;
 let deletions = [];
+let wipFiber = null;
 
 function workLoop(IdleDeadline) {
   let shouldYield = false;
   while (!shouldYield && nextWorkOfUnit) {
     nextWorkOfUnit = performWorkOfUnit(nextWorkOfUnit);
+
+    if (wipRoot?.sibling?.type === nextWorkOfUnit?.type) {
+      console.log("hit", wipRoot, nextWorkOfUnit);
+      nextWorkOfUnit = undefined;
+    }
+
     shouldYield = IdleDeadline.timeRemaining() < 1;
   }
 
@@ -179,6 +185,8 @@ function reconcileChildren(fiber, children) {
 }
 
 function updateFunctionComponent(fiber) {
+  wipFiber = fiber;
+
   const children = [fiber.type(fiber.props)];
   reconcileChildren(fiber, children);
 }
@@ -220,12 +228,15 @@ function performWorkOfUnit(fiber) {
 requestIdleCallback(workLoop);
 
 function update() {
-  wipRoot = {
-    dom: currentRoot.dom,
-    props: currentRoot.props,
-    alternate: currentRoot,
+  let currentFiber = wipFiber;
+  return () => {
+    console.log("currentFiber", currentFiber);
+    wipRoot = {
+      ...currentFiber,
+      alternate: currentFiber,
+    };
+    nextWorkOfUnit = wipRoot;
   };
-  nextWorkOfUnit = wipRoot;
 }
 
 export default {
