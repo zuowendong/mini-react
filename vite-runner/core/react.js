@@ -44,7 +44,6 @@ function workLoop(IdleDeadline) {
     nextWorkOfUnit = performWorkOfUnit(nextWorkOfUnit);
 
     if (wipRoot?.sibling?.type === nextWorkOfUnit?.type) {
-      console.log("hit", wipRoot, nextWorkOfUnit);
       nextWorkOfUnit = undefined;
     }
 
@@ -185,8 +184,10 @@ function reconcileChildren(fiber, children) {
 }
 
 function updateFunctionComponent(fiber) {
-  wipFiber = fiber;
+  stateHooks = [];
+  stateHookIndex = 0;
 
+  wipFiber = fiber;
   const children = [fiber.type(fiber.props)];
   reconcileChildren(fiber, children);
 }
@@ -230,7 +231,6 @@ requestIdleCallback(workLoop);
 function update() {
   let currentFiber = wipFiber;
   return () => {
-    console.log("currentFiber", currentFiber);
     wipRoot = {
       ...currentFiber,
       alternate: currentFiber,
@@ -239,8 +239,34 @@ function update() {
   };
 }
 
+let stateHooks;
+let stateHookIndex;
+function useState(initial) {
+  let currentFiber = wipFiber;
+  const oldState = currentFiber.alternate?.stateHooks[stateHookIndex];
+  const stateHook = {
+    state: oldState ? oldState.state : initial,
+  };
+
+  stateHookIndex++;
+  stateHooks.push(stateHook);
+  currentFiber.stateHooks = stateHooks;
+
+  function setState(action) {
+    stateHook.state = action(stateHook.state);
+    wipRoot = {
+      ...currentFiber,
+      alternate: currentFiber,
+    };
+    nextWorkOfUnit = wipRoot;
+  }
+
+  return [stateHook.state, setState];
+}
+
 export default {
-  update,
   render,
   createElement,
+  update,
+  useState,
 };
