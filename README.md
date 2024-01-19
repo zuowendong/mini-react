@@ -1,5 +1,9 @@
 # mini-react 第七天
 
 useState中维护一个数组存放stateHook,通过一个数值类型索引变量stateHookIndex区分数组中每次存放的hook对象，在更新function component 时初始化这个数组和索引变量。
+
 因为useState是放在组件内执行函数外，那每次更新都会重复执行组件，useState也会被执行，所以会每次重置获取它的默认传入参数。
+
 将上一次计算的数据存放在当前老节点上，存在老数据的话就用老数据，否则用默认传入的参数。有取数据就有存数据，将每次执行的stateHook存入数组再绑定到当前的fiber上，同时修改stateHookIndex以区分每次存入的数据。setState方法中用的是update中逻辑，执行更新修改stateHook。
+
+action执行的优化，将每次action存起来再批量处理，避免了在setState执行方法里频繁的修改state。
