@@ -185,6 +185,9 @@ function reconcileChildren(fiber, children) {
 }
 
 function updateFunctionComponent(fiber) {
+  stateHooks = [];
+  stateHookIndex = 0;
+
   wipFiber = fiber;
 
   const children = [fiber.type(fiber.props)];
@@ -230,7 +233,6 @@ requestIdleCallback(workLoop);
 function update() {
   let currentFiber = wipFiber;
   return () => {
-    console.log("currentFiber", currentFiber);
     wipRoot = {
       ...currentFiber,
       alternate: currentFiber,
@@ -239,8 +241,35 @@ function update() {
   };
 }
 
+let stateHooks;
+let stateHookIndex;
+function useState(initial) {
+  let currentFiber = wipFiber;
+  const oldState = currentFiber.alternate?.stateHooks[stateHookIndex];
+  const stateHook = {
+    state: oldState ? oldState.state : initial,
+  };
+
+  stateHooks.push(stateHook);
+  stateHookIndex++;
+  currentFiber.stateHooks = stateHooks;
+
+  function setState(action) {
+    stateHook.state = action(stateHook.state);
+
+    wipRoot = {
+      ...currentFiber,
+      alternate: currentFiber,
+    };
+    nextWorkOfUnit = wipRoot;
+  }
+
+  return [stateHook.state, setState];
+}
+
 export default {
-  update,
   render,
   createElement,
+  update,
+  useState,
 };
