@@ -44,7 +44,6 @@ function workLoop(IdleDeadline) {
     nextWorkOfUnit = performWorkOfUnit(nextWorkOfUnit);
 
     if (wipRoot?.sibling?.type === nextWorkOfUnit?.type) {
-      console.log("hit", wipRoot, nextWorkOfUnit);
       nextWorkOfUnit = undefined;
     }
 
@@ -189,7 +188,6 @@ function updateFunctionComponent(fiber) {
   stateHookIndex = 0;
 
   wipFiber = fiber;
-
   const children = [fiber.type(fiber.props)];
   reconcileChildren(fiber, children);
 }
@@ -250,13 +248,12 @@ function useState(initial) {
     state: oldState ? oldState.state : initial,
   };
 
-  stateHooks.push(stateHook);
   stateHookIndex++;
+  stateHooks.push(stateHook);
   currentFiber.stateHooks = stateHooks;
 
   function setState(action) {
     stateHook.state = action(stateHook.state);
-
     wipRoot = {
       ...currentFiber,
       alternate: currentFiber,
