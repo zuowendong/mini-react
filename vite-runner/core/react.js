@@ -60,9 +60,38 @@ function workLoop(IdleDeadline) {
 function commitRoot() {
   deletions.forEach(commitDeletion);
   commitWork(wipRoot.child);
+  commitEffectHooks();
+
   currentRoot = wipRoot;
   wipRoot = null;
   deletions = [];
+}
+
+function commitEffectHooks() {
+  function run(fiber) {
+    if (!fiber) return;
+
+    if (!fiber.alternate) {
+      // init
+      fiber.effectHooks?.forEach((hook) => {
+        hook.callback();
+      });
+    } else {
+      // update
+      fiber.effectHooks?.forEach((hook, index) => {
+        const oldEffectHook = fiber.alternate?.effectHooks[index];
+        const needUpdate = oldEffectHook?.deps.some((oldDep, i) => {
+          return oldDep !== hook.deps[i];
+        });
+        needUpdate && hook.callback();
+      });
+    }
+
+    run(fiber.child);
+    run(fiber.sibling);
+  }
+
+  run(wipRoot);
 }
 
 function commitDeletion(fiber) {
@@ -186,6 +215,7 @@ function reconcileChildren(fiber, children) {
 function updateFunctionComponent(fiber) {
   stateHooks = [];
   stateHookIndex = 0;
+  effectHooks = [];
 
   wipFiber = fiber;
   const children = [fiber.type(fiber.props)];
@@ -276,9 +306,21 @@ function useState(initial) {
   return [stateHook.state, setState];
 }
 
+let effectHooks;
+function useEffect(callback, deps) {
+  const effectHook = {
+    callback,
+    deps,
+  };
+
+  effectHooks.push(effectHook);
+  wipFiber.effectHooks = effectHooks;
+}
+
 export default {
   render,
   createElement,
   update,
   useState,
+  useEffect,
 };
