@@ -74,16 +74,18 @@ function commitEffectHooks() {
     if (!fiber.alternate) {
       // init
       fiber.effectHooks?.forEach((hook) => {
-        hook.callback();
+        hook.cleanup = hook.callback();
       });
     } else {
       // update
       fiber.effectHooks?.forEach((hook, index) => {
-        const oldEffectHook = fiber.alternate?.effectHooks[index];
-        const needUpdate = oldEffectHook?.deps.some((oldDep, i) => {
-          return oldDep !== hook.deps[i];
-        });
-        needUpdate && hook.callback();
+        if (hook.deps.length) {
+          const oldEffectHook = fiber.alternate?.effectHooks[index];
+          const needUpdate = oldEffectHook?.deps.some((oldDep, i) => {
+            return oldDep !== hook.deps[i];
+          });
+          needUpdate && (hook.cleanup = hook.callback());
+        }
       });
     }
 
@@ -91,6 +93,20 @@ function commitEffectHooks() {
     run(fiber.sibling);
   }
 
+  function runCleanup(fiber) {
+    if (!fiber) return;
+
+    fiber?.alternate?.effectHooks?.forEach((hook) => {
+      if (hook.deps.length > 0) {
+        hook.cleanup && hook.cleanup();
+      }
+    });
+
+    runCleanup(fiber.child);
+    runCleanup(fiber.sibling);
+  }
+
+  runCleanup(wipRoot);
   run(wipRoot);
 }
 
@@ -311,6 +327,7 @@ function useEffect(callback, deps) {
   const effectHook = {
     callback,
     deps,
+    cleanup: undefined,
   };
 
   effectHooks.push(effectHook);
