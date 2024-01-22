@@ -25,7 +25,7 @@
 
 大体的思路画了一个图解示意：
 
-![](./assets/create.png)
+![](./assets/9.png)
 
 此时原生的JS实现页面中渲染需要的内容，但是对比 React ，其调用的 API 还是不相同。
 
@@ -39,6 +39,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App />)
 第一天的内容相对来说还是很简单的，可能是很久没用原生 JS 的缘故（大概率是我基础太差），原生实现的部分卡壳，但是后来函数的封装上，和之前学习的过的 mini-vue 类似，相对轻松了点。
 
 第一天打卡截图：
+
+![](./assets/1.png)
 
 
 ## 第二天
